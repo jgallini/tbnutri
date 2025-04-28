@@ -1,0 +1,944 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+This program creates the main results for the cost effectiveness analysis of a nutritional supplementation program for TB patients in India.
+
+First, we calculate the estimated cost per DALY of the intervention and 95% confidence interval. 
+```{r}
+
+#bringing in cost effectiveness function and necessary libraries
+here::i_am("Code/Cost_Effectiveness_Results.Rmd")
+library(here)
+source(here("Code/cost_eff.R"))
+
+#setting number of iterations to use for these simulations throughout the program
+its<-10
+
+main_run<-cost_eff(iterations = its)
+cost_per_daly2<-sort(main_run[["cost_per_daly"]])
+quantile(cost_per_daly2,c(0.025,0.5,0.975))
+
+hist(cost_per_daly2[cost_per_daly2<2500&cost_per_daly2>0])
+
+#investigating off center results
+plot(main_run[["Treatment_Inputs"]][,"tb_death"][main_run[["cost_per_daly"]]<2500]/
+       main_run[["Control_Inputs"]][,"tb_death"][main_run[["cost_per_daly"]]<2500],
+     main_run[["cost_per_daly"]][main_run[["cost_per_daly"]]<2500])
+
+#saving for troubleshooting afterward
+#saveRDS(main_run,file=here("Data/main_run.RDS"))
+```
+
+Now calculating some statistics from the main run to report in the paper.
+```{r}
+#calculating TB death statistics for first 6 months in control group
+tbdeath_con<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  tbdeath_con[i]<-main_run[["Subjects_cont"]][[i]][["die_tb"]][7]
+}
+#tb death in intervention group (6 months)
+tbdeath_trt<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  tbdeath_trt[i]<-main_run[["Subjects_trt"]][[i]][["die_tb"]][7]
+}
+#risk ratio tb death
+tbdeath_rr<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  tbdeath_rr[i]<-main_run[["Subjects_trt"]][[i]][["die_tb"]][7]/
+    main_run[["Subjects_cont"]][[i]][["die_tb"]][7]
+}
+#statistics on tb death
+quantile(tbdeath_con,c(0.025,0.5,0.975))
+quantile(tbdeath_trt,c(0.025,0.5,0.975))
+quantile(tbdeath_rr,c(0.025,0.5,0.975))
+
+
+#ltf statistics first 6 months treatment group
+ltf6_con<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  ltf6_con[i]<-main_run[["Subjects_cont"]][[i]][["ltfu"]][7]
+}
+#ltf in intervention group (6 months)
+ltf6_trt<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  ltf6_trt[i]<-main_run[["Subjects_trt"]][[i]][["ltfu"]][7]
+}
+#risk ratio ltf 6 months
+ltf6_rr<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  ltf6_rr[i]<-main_run[["Subjects_trt"]][[i]][["ltfu"]][7]/
+    main_run[["Subjects_cont"]][[i]][["ltfu"]][7]
+}
+#statistics on ltf
+quantile(ltf6_con,c(0.025,0.5,0.975))
+quantile(ltf6_trt,c(0.025,0.5,0.975))
+quantile(ltf6_rr,c(0.025,0.5,0.975))
+
+
+
+#treatment completion rate statistics in control group
+comp_con<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  comp_con[i]<-main_run[["Subjects_cont"]][[i]][["early_posttrt"]][7]/10000
+}
+#treatment completion rate in intervention group
+comp_trt<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  comp_trt[i]<-main_run[["Subjects_trt"]][[i]][["early_posttrt"]][7]/10000
+}
+#risk ratio treatment completion
+comp_rr<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  comp_rr[i]<-main_run[["Subjects_trt"]][[i]][["early_posttrt"]][7]/
+    main_run[["Subjects_cont"]][[i]][["early_posttrt"]][7]
+}
+#statistics on treatment completion
+quantile(comp_con,c(0.025,0.5,0.975))
+quantile(comp_trt,c(0.025,0.5,0.975))
+quantile(comp_rr,c(0.025,0.5,0.975))
+
+
+#lifetime TB deaths control group (tb deaths plus posttb other death*0.14)
+tblife_con<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  tblife_con[i]<-main_run[["Subjects_cont"]][[i]][["die_tb"]][720]+
+    (0.14*main_run[["Subjects_cont"]][[i]][["die_other_cause_posttb"]][720])
+}
+#lifetime tb deaths treatment group
+tblife_trt<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  tblife_trt[i]<-main_run[["Subjects_trt"]][[i]][["die_tb"]][720]+
+    (0.14*main_run[["Subjects_trt"]][[i]][["die_other_cause_posttb"]][720])
+}
+#risk ratio tb deaths
+tblife_rr<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  tblife_rr[i]<-(main_run[["Subjects_trt"]][[i]][["die_tb"]][720]+
+    (0.14*main_run[["Subjects_trt"]][[i]][["die_other_cause_posttb"]][720]))/
+    (main_run[["Subjects_cont"]][[i]][["die_tb"]][720]+
+    (0.14*main_run[["Subjects_cont"]][[i]][["die_other_cause_posttb"]][720]))
+}
+#statistics on lifetime tb death
+quantile(tblife_con,c(0.025,0.5,0.975))
+quantile(tblife_trt,c(0.025,0.5,0.975))
+quantile(tblife_rr,c(0.025,0.5,0.975))
+
+
+#DALY aversion
+dalyav<-vector()
+for (i in 1:length(main_run[["Control_DALYS"]])){
+  dalyav[i]<-main_run[["Control_DALYS"]][[i]]-main_run[["Treatment_DALYS"]][[i]]
+}
+quantile(dalyav,c(0.025,0.5,0.975))
+
+
+#years lost to TB mortality
+#control- more correct method with discounting
+yrs_tbdeath_cont_n<-vector()
+it_vec<-vector()
+it_vec2<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  it_vec<-main_run[["Subjects_cont"]][[i]][["die_tb"]][seq(12,720,12)]
+  for (j in 1:length(it_vec)){
+      it_vec2[j]<-it_vec[j]/((1+0.03)**j)
+  }
+  yrs_tbdeath_cont_n[i]<-sum(it_vec2)
+}
+#intervention- discounting
+yrs_tbdeath_trt_n<-vector()
+itc_vec<-vector()
+itc_vec2<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  itc_vec<-main_run[["Subjects_trt"]][[i]][["die_tb"]][seq(12,720,12)]
+  for (j in 1:length(itc_vec)){
+      itc_vec2[j]<-itc_vec[j]/((1+0.03)**j)
+  }
+  yrs_tbdeath_trt_n[i]<-sum(itc_vec2)
+}
+quantile(yrs_tbdeath_cont_n,c(0.025,0.5,0.975))
+quantile(yrs_tbdeath_trt_n,c(0.025,0.5,0.975))
+
+#years lost to incremental post-tb mortality
+#control now with discounting
+yrs_posttb_cont_n<-vector()
+ptb_c<-vector()
+ptb_c2<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  ptb_c<-(0.14*sum(main_run[["Subjects_cont"]][[i]][["die_other_cause_posttb"]][seq(12,720,12)]))
+  for (j in 1:length(ptb_c)){
+       ptb_c2[j]<-ptb_c[j]/((1+0.03)**j)
+   }
+   yrs_posttb_cont_n[i]<-sum(ptb_c2)
+}
+#intervention with discounting
+yrs_posttb_trt_n<-vector()
+ptb_t<-vector()
+ptb_t2<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  ptb_t<-(0.14*sum(main_run[["Subjects_trt"]][[i]][["die_other_cause_posttb"]][seq(12,720,12)]))
+  for (j in 1:length(ptb_t)){
+       ptb_t2[j]<-ptb_t[j]/((1+0.03)**j)
+   }
+   yrs_posttb_trt_n[i]<-sum(ptb_t2)
+}
+quantile(yrs_posttb_cont_n,c(0.025,0.5,0.975))
+quantile(yrs_posttb_trt_n,c(0.025,0.5,0.975))
+
+#total years lost to TB daly's
+#control with discounting
+yrs_tbdaly_cont_n<-vector()
+dal_c<-vector()
+dal_c2<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  dal_c<-unname(0.02775*rowSums(main_run[["Subjects_cont"]][[i]][c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6","failed","relapse", "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6")]))
+  #split months into groups by year
+  dcheck1<-split(dal_c,ceiling(seq_along(dal_c)/12))
+  
+  #summing DALY's by year
+    l1<-list()
+    for (j in 1:length(dcheck1)){
+      l1[j]<-sum(dcheck1[[j]])
+    }
+    u1<-unlist(l1)
+    
+  #applying discounting
+  for (j in 1:length(u1)){
+       dal_c2[j]<-u1[j]/((1+0.03)**j)
+   }
+  yrs_tbdaly_cont_n[i]<-sum(dal_c2)
+}
+#intervention- discounting applied
+yrs_tbdaly_trt_n<-vector()
+dal_t<-vector()
+dal_t2<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+ dal_t<-unname(0.02775*rowSums(main_run[["Subjects_trt"]][[i]][c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6","failed","relapse", "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6")]))
+ #split months into groups by year
+  dcheck2<-split(dal_t,ceiling(seq_along(dal_t)/12))
+  
+  #summing DALY's by year
+    l2<-list()
+    for (j in 1:length(dcheck2)){
+      l2[j]<-sum(dcheck2[[j]])
+    }
+    u2<-unlist(l2)
+  
+  #applying discounting  
+  for (j in 1:length(u2)){
+       dal_t2[j]<-u2[j]/((1+0.03)**j)
+   }
+  yrs_tbdaly_trt_n[i]<-sum(dal_t2)
+}
+quantile(yrs_tbdaly_cont_n,c(0.025,0.5,0.975))
+quantile(yrs_tbdaly_trt_n,c(0.025,0.5,0.975))
+
+
+#post-TB DALY years lost statistics
+#control- discounting applied
+yrs_posttbdaly_cont_n<-vector()
+pdal_c<-vector()
+pdal_c2<-vector()
+for (i in 1:length(main_run[["Subjects_cont"]])){
+  pdal_c<-unname(0.0044*rowSums(main_run[["Subjects_cont"]][[i]][c("early_posttrt","late_posttrt","ltfu")]))
+  #split months into groups by year
+  dcheck3<-split(pdal_c,ceiling(seq_along(pdal_c)/12))
+  
+  #summing DALY's by year
+    l3<-list()
+    for (j in 1:length(dcheck3)){
+      l3[j]<-sum(dcheck3[[j]])
+    }
+    u3<-unlist(l3)
+  for (j in 1:length(u3)){
+       pdal_c2[j]<-u3[j]/((1+0.03)**j)
+  }
+  yrs_posttbdaly_cont_n[i]<-sum(pdal_c2)
+}
+#intervention- discounting applied
+yrs_posttbdaly_trt_n<-vector()
+pdal_t<-vector()
+pdal_t2<-vector()
+for (i in 1:length(main_run[["Subjects_trt"]])){
+  pdal_t<-unname(0.0044*rowSums(main_run[["Subjects_trt"]][[i]][c("early_posttrt","late_posttrt","ltfu")]))
+  #split months into groups by year
+  dcheck4<-split(pdal_t,ceiling(seq_along(pdal_t)/12))
+  
+  #summing DALY's by year
+    l4<-list()
+    for (j in 1:length(dcheck4)){
+      l4[j]<-sum(dcheck4[[j]])
+    }
+    u4<-unlist(l4)
+    #applying discounting
+    for (j in 1:length(u4)){
+       pdal_t2[j]<-u4[j]/((1+0.03)**j)
+  }
+  yrs_posttbdaly_trt_n[i]<-sum(pdal_t2)
+}
+quantile(yrs_posttbdaly_cont_n,c(0.025,0.5,0.975))
+quantile(yrs_posttbdaly_trt_n,c(0.025,0.5,0.975))
+
+#totals
+#control
+cont_total<-rowSums(cbind(yrs_posttbdaly_cont_n,yrs_tbdaly_cont_n,yrs_posttb_cont_n,yrs_tbdeath_cont_n))
+quantile(cont_total,c(0.025,0.5,0.975))
+#treatment
+trt_total<-rowSums(cbind(yrs_posttb_trt_n,yrs_posttbdaly_trt_n,yrs_tbdaly_trt_n,yrs_tbdeath_trt_n))
+quantile(trt_total,c(0.025,0.5,.975))
+
+#total cost statistics
+quantile(main_run[["ctrl_csum"]],c(0.025,0.5,0.975))
+quantile(main_run[["trt_csum"]],c(0.025,0.5,0.975))
+
+#breaking down costs in intervention group statistics
+tbonly_csum<-vector()
+rate<-0.03
+for (i in 1:length(main_run[["trt_csum"]])){
+  Intervention_c<-subset(main_run[["Subjects_trt"]][[i]],select=c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6",           "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6"))
+  
+    tbonly_cost<-main_run[["Treatment_Inputs"]][i,"tb_cost"]*Intervention_c 
+    sum_dtt<-as.vector(rowSums(tbonly_cost))
+    
+    #splits months into groups by year
+    dcheck1tt<-split(sum_dtt,ceiling(seq_along(sum_dtt)/12))
+    
+    #summing costs by year
+    l1t<-list()
+    for (j in 1:length(dcheck1tt)){
+      l1t[j]<-sum(dcheck1tt[[j]])
+    }
+    u1tt<-unlist(l1t)
+    
+    #applying discounting
+    u2tt<-list()
+    for (j in 1:length(u1tt)){
+      u2tt[j]<-u1tt[j]/((1+rate)**j)
+    }
+    tbonly_csum[i]<-sum(unlist(u2tt))
+}
+quantile(tbonly_csum,c(0.025,0.5,0.975))
+
+
+foodonly_csum<-vector()
+rate<-0.03
+for (i in 1:length(main_run[["trt_csum"]])){
+  Intervention_c<-subset(main_run[["Subjects_trt"]][[i]],select=c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6",           "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6"))
+  
+    foodonly_cost<-main_run[["Treatment_Inputs"]][i,"food_cost"]*Intervention_c 
+    sum_dtt<-as.vector(rowSums(foodonly_cost))
+    
+    #splits months into groups by year
+    dcheck1tt<-split(sum_dtt,ceiling(seq_along(sum_dtt)/12))
+    
+    #summing costs by year
+    l1t<-list()
+    for (j in 1:length(dcheck1tt)){
+      l1t[j]<-sum(dcheck1tt[[j]])
+    }
+    u1tt<-unlist(l1t)
+    
+    #applying discounting
+    u2tt<-list()
+    for (j in 1:length(u1tt)){
+      u2tt[j]<-u1tt[j]/((1+rate)**j)
+    }
+    foodonly_csum[i]<-sum(unlist(u2tt))
+}
+quantile(foodonly_csum,c(0.025,0.5,0.975))
+
+
+#parameter input statistics
+quantile(main_run[["Treatment_Inputs"]][,"tb_death"]/main_run[["Control_Inputs"]][,"tb_death"]
+         ,c(0.025,0.5,0.975))
+
+rr<-main_run[["Treatment_Inputs"]][,"tb_death"]/main_run[["Control_Inputs"]][,"tb_death"]
+hist(rr)
+quantile(main_run[["Treatment_Inputs"]][,"food_cost"],c(0.025,0.5,0.975))
+quantile(main_run[["Control_Inputs"]][,"food_cost"],c(0.025,0.5,0.975))
+
+
+```
+
+
+Here we run deterministic sensitivity analyses where all parameters except for 1 are held constant to determine the impact of each individual parameter. 
+
+Here are the results from varying only TB death probability.
+```{r}
+#varying only TB death probability
+tbdeath_sens<-cost_eff(iterations=its, tb_death_c=FALSE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(tbdeath_sens[["cost_per_daly"]])
+quantile(tbdeath_sens[["cost_per_daly"]],c(0.025,0.975))
+max(max(tbdeath_sens[["Control_Inputs"]][,"tb_death"]),max(tbdeath_sens[["Treatment_Inputs"]][,"tb_death"]))
+min(min(tbdeath_sens[["Control_Inputs"]][,"tb_death"]),min(tbdeath_sens[["Treatment_Inputs"]][,"tb_death"]))
+
+#risk ratio min, median, and max over all the iterations
+#tbdeath_sens<-readRDS("tbdeath_sens.RDS")
+rr_tbdeath<-c()
+for (i in 1:its){
+  rr_tbdeath[i]<-tbdeath_sens[["Treatment_Inputs"]][i,"tb_death"]/tbdeath_sens[["Control_Inputs"]][i,"tb_death"]
+}
+min(rr_tbdeath)
+median(rr_tbdeath)
+max(rr_tbdeath)
+quantile(rr_tbdeath,c(0.025,0.975))
+
+hist(tbdeath_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(tbdeath_sens,file=here("Data/tbdeath_sens.RDS"))
+
+#additional threshold analyses
+ts1<-as.data.frame(cbind(tbdeath_sens[["cost_per_daly"]],tbdeath_sens[["Treatment_Inputs"]][,"tb_death"],
+           tbdeath_sens[["Control_Inputs"]][,"tb_death"]))
+ts1[ts1$V1>549&ts1$V1<552,]
+0.012199949/0.01380457
+ts1[ts1$V1>409&ts1$V1<410,]
+0.00805864/0.01027073
+```
+
+
+
+Here are the results from varying only other death probability.
+```{r}
+#varying only Other death probability
+othdeath_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=FALSE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(othdeath_sens[["cost_per_daly"]])
+quantile(othdeath_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#othdeath_sens<-readRDS("othdeath_sens.RDS")
+max(max(othdeath_sens[["Control_Inputs"]][,"oth_death"]),max(othdeath_sens[["Treatment_Inputs"]][,"oth_death"]))
+median(median(othdeath_sens[["Control_Inputs"]][,"oth_death"]),median(othdeath_sens[["Treatment_Inputs"]][,"oth_death"]))
+min(min(othdeath_sens[["Control_Inputs"]][,"oth_death"]),min(othdeath_sens[["Treatment_Inputs"]][,"oth_death"]))
+
+quantile(othdeath_sens[["Control_Inputs"]][,"oth_death"],c(0.025,0.5,0.975))
+quantile(othdeath_sens[["Treatment_Inputs"]][,"oth_death"],c(0.025,0.5,0.975))
+
+hist(othdeath_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(othdeath_sens,file=here("Data/othdeath_sens.RDS"))
+```
+
+
+Here are the results from varying only failed probability.
+```{r}
+#varying only failed probability
+fail_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=FALSE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(fail_sens[["cost_per_daly"]])
+quantile(fail_sens[["cost_per_daly"]],c(0.025,0.975))
+max(max(fail_sens[["Control_Inputs"]][,"failed"]),
+    max(fail_sens[["Treatment_Inputs"]][,"failed"]))
+min(min(fail_sens[["Control_Inputs"]][,"failed"]),
+    min(fail_sens[["Treatment_Inputs"]][,"failed"]))
+
+#risk ratio min and max over all the iterations
+#fail_sens<-readRDS("fail_sens.RDS")
+rr_fail<-c()
+for (i in 1:its){
+  rr_fail[i]<-fail_sens[["Treatment_Inputs"]][i,"failed"]/fail_sens[["Control_Inputs"]][i,"failed"]
+}
+min(rr_fail)
+median(rr_fail)
+max(rr_fail)
+quantile(rr_fail,c(0.025,0.975))
+
+hist(fail_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(fail_sens,file=here("Data/fail_sens.RDS"))
+
+```
+
+
+Here are the results from varying only LTF probability.
+```{r}
+#varying only LTF probability
+ltf_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=FALSE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(ltf_sens[["cost_per_daly"]])
+quantile(ltf_sens[["cost_per_daly"]],c(0.025,0.975))
+
+max(max(ltf_sens[["Control_Inputs"]][,"ltf"]),
+    max(ltf_sens[["Treatment_Inputs"]][,"ltf"]))
+min(min(ltf_sens[["Control_Inputs"]][,"ltf"]),
+    min(ltf_sens[["Treatment_Inputs"]][,"ltf"]))
+
+#risk ratio min and max over all the iterations
+#ltf_sens<-readRDS("ltf_sens.RDS")
+rr_ltf<-c()
+for (i in 1:its){
+  rr_ltf[i]<-ltf_sens[["Treatment_Inputs"]][i,"ltf"]/ltf_sens[["Control_Inputs"]][i,"ltf"]
+}
+min(rr_ltf)
+median(rr_ltf)
+max(rr_ltf)
+quantile(rr_ltf,c(0.025,0.5,0.975))
+
+hist(ltf_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(ltf_sens,file=here("Data/ltf_sens.RDS"))
+```
+
+
+Here are the results from varying only LTF to relapse probability.
+```{r}
+#varying only LTF to relapse
+ltfrelap_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=FALSE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(ltfrelap_sens[["cost_per_daly"]])
+quantile(ltfrelap_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#ltfrelap_sens<-readRDS("ltfrelap_sens.RDS")
+max_1<-max(max(ltfrelap_sens[["Control_Inputs"]][,"ltf_relap"]),max(ltfrelap_sens[["Treatment_Inputs"]][,"ltf_relap"]))
+median_1<-median(median(ltfrelap_sens[["Control_Inputs"]][,"ltf_relap"]),median(ltfrelap_sens[["Treatment_Inputs"]][,"ltf_relap"]))
+min_1<-min(min(ltfrelap_sens[["Control_Inputs"]][,"ltf_relap"]),min(ltfrelap_sens[["Treatment_Inputs"]][,"ltf_relap"]))
+
+lb_1<-quantile(c(ltfrelap_sens[["Control_Inputs"]][,"ltf_relap"],ltfrelap_sens[["Treatment_Inputs"]][,"ltf_relap"]),0.025)
+ub_1<-quantile(c(ltfrelap_sens[["Control_Inputs"]][,"ltf_relap"],ltfrelap_sens[["Treatment_Inputs"]][,"ltf_relap"]),0.975)
+
+#converting percentiles to 12 month probabilities
+r1<-(-log(1-min_1)) #1 month rate
+min_12<-1-exp(-r1*12) #12 month probability
+min_12
+
+r1<-(-log(1-median_1)) #1 month rate
+median_12<-1-exp(-r1*12) #12 month probability
+median_12
+
+r1<-(-log(1-max_1)) #1 month rate
+max_12<-1-exp(-r1*12) #12 month probability
+max_12
+
+r1<-(-log(1-lb_1)) #1 month rate
+lb_12<-1-exp(-r1*12) #12 month probability
+lb_12
+
+r1<-(-log(1-ub_1)) #1 month rate
+ub_12<-1-exp(-r1*12) #12 month probability
+ub_12
+
+hist(ltfrelap_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(ltfrelap_sens,file=here("Data/ltfrelap_sens.RDS"))
+
+```
+
+Here are the results from varying only early post-treatment to relapse probability.
+```{r}
+#varying only early post treatment to relapse
+earptrelap_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=FALSE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(earptrelap_sens[["cost_per_daly"]])
+quantile(earptrelap_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#earptrelap_sens<-readRDS("earptrelap_sens.RDS")
+max_1<-max(max(earptrelap_sens[["Control_Inputs"]][,"earpt_relap"]),max(earptrelap_sens[["Treatment_Inputs"]][,"earpt_relap"]))
+median_1<-median(median(earptrelap_sens[["Control_Inputs"]][,"earpt_relap"]),median(earptrelap_sens[["Treatment_Inputs"]][,"earpt_relap"]))
+min_1<-min(min(earptrelap_sens[["Control_Inputs"]][,"earpt_relap"]),min(earptrelap_sens[["Treatment_Inputs"]][,"earpt_relap"]))
+
+lb_1<-quantile(c(earptrelap_sens[["Control_Inputs"]][,"earpt_relap"],earptrelap_sens[["Treatment_Inputs"]][,"earpt_relap"]),0.025)
+ub_1<-quantile(c(earptrelap_sens[["Control_Inputs"]][,"earpt_relap"],earptrelap_sens[["Treatment_Inputs"]][,"earpt_relap"]),0.975)
+
+#converting min and max to 12 month probabilities
+r1<-(-log(1-min_1)) #1 month rate
+min_12<-1-exp(-r1*12) #12 month probability
+min_12
+
+r1<-(-log(1-median_1)) #1 month rate
+median_12<-1-exp(-r1*12) #12 month probability
+median_12
+
+r1<-(-log(1-max_1)) #1 month rate
+max_12<-1-exp(-r1*12) #12 month probability
+max_12
+
+r1<-(-log(1-lb_1)) #1 month rate
+lb_12<-1-exp(-r1*12) #12 month probability
+lb_12
+
+r1<-(-log(1-ub_1)) #1 month rate
+ub_12<-1-exp(-r1*12) #12 month probability
+ub_12
+
+hist(earptrelap_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(earptrelap_sens,file=here("Data/earptrelap_sens.RDS"))
+```
+
+Here are the results from varying only late post-treatment to relapse probability.
+```{r}
+#varying only late post treatment to relapse
+ltptrelap_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=FALSE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(ltptrelap_sens[["cost_per_daly"]])
+quantile(ltptrelap_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#ltptrelap_sens<-readRDS("ltptrelap_sens.RDS")
+max_1<-max(max(ltptrelap_sens[["Control_Inputs"]][,"ltpt_relap"]),max(ltptrelap_sens[["Treatment_Inputs"]][,"ltpt_relap"]))
+median_1<-median(median(ltptrelap_sens[["Control_Inputs"]][,"ltpt_relap"]),median(ltptrelap_sens[["Treatment_Inputs"]][,"ltpt_relap"]))
+min_1<-min(min(ltptrelap_sens[["Control_Inputs"]][,"ltpt_relap"]),min(ltptrelap_sens[["Treatment_Inputs"]][,"ltpt_relap"]))
+
+lb_1<-quantile(c(ltptrelap_sens[["Control_Inputs"]][,"ltpt_relap"],ltptrelap_sens[["Treatment_Inputs"]][,"ltpt_relap"]),0.025)
+ub_1<-quantile(c(ltptrelap_sens[["Control_Inputs"]][,"ltpt_relap"],ltptrelap_sens[["Treatment_Inputs"]][,"ltpt_relap"]),0.975)
+
+#converting min and max to 12 month probabilities
+r1<-(-log(1-min_1)) #1 month rate
+min_12<-1-exp(-r1*12) #12 month probability
+min_12
+
+r1<-(-log(1-median_1)) #1 month rate
+median_12<-1-exp(-r1*12) #12 month probability
+median_12
+
+r1<-(-log(1-max_1)) #1 month rate
+max_12<-1-exp(-r1*12) #12 month probability
+max_12
+
+r1<-(-log(1-lb_1)) #1 month rate
+lb_12<-1-exp(-r1*12) #12 month probability
+lb_12
+
+r1<-(-log(1-ub_1)) #1 month rate
+ub_12<-1-exp(-r1*12) #12 month probability
+ub_12
+
+hist(ltptrelap_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(ltptrelap_sens,file=here("Data/ltptrelap_sens.RDS"))
+```
+
+Here are the results from varying only food cost.
+```{r}
+
+#varying only food cost
+foodcost_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=FALSE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+quantile(foodcost_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#foodcost_sens<-readRDS("foodcost_sens.RDS")
+max(max(foodcost_sens[["Control_Inputs"]][,"food_cost"]),max(foodcost_sens[["Treatment_Inputs"]][,"food_cost"]))
+median(median(foodcost_sens[["Control_Inputs"]][,"food_cost"]),median(foodcost_sens[["Treatment_Inputs"]][,"food_cost"]))
+min(min(foodcost_sens[["Control_Inputs"]][,"food_cost"]),min(foodcost_sens[["Treatment_Inputs"]][,"food_cost"]))
+
+quantile(c(foodcost_sens[["Control_Inputs"]][,"food_cost"],foodcost_sens[["Treatment_Inputs"]][,"food_cost"]),0.025)
+quantile(c(foodcost_sens[["Control_Inputs"]][,"food_cost"],foodcost_sens[["Treatment_Inputs"]][,"food_cost"]),0.975)
+
+hist(foodcost_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(foodcost_sens,file=here("Data/foodcost_sens.RDS"))
+
+#additional threshold analyses
+ts2<-as.data.frame(cbind(foodcost_sens[["cost_per_daly"]],foodcost_sens[["Treatment_Inputs"]][,"food_cost"],foodcost_sens[["Control_Inputs"]][,"food_cost"]))
+ts2[ts2$V1>549,]
+ts2[ts2$V1>409,]
+max(foodcost_sens[["Treatment_Inputs"]][,"food_cost"])
+max(foodcost_sens[["Control_Inputs"]][,"food_cost"])
+```
+
+
+Here are the results from varying only TB treatment cost.
+```{r}
+#varying only TB treatment cost
+tbcost_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=FALSE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(tbcost_sens[["cost_per_daly"]])
+quantile(tbcost_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#tbcost_sens<-readRDS("tbcost_sens.RDS")
+max(max(tbcost_sens[["Control_Inputs"]][,"tb_cost"]),max(tbcost_sens[["Treatment_Inputs"]][,"tb_cost"]))
+median(median(tbcost_sens[["Control_Inputs"]][,"tb_cost"]),median(tbcost_sens[["Treatment_Inputs"]][,"tb_cost"]))
+min(min(tbcost_sens[["Control_Inputs"]][,"tb_cost"]),min(tbcost_sens[["Treatment_Inputs"]][,"tb_cost"]))
+
+quantile(c(tbcost_sens[["Control_Inputs"]][,"tb_cost"],tbcost_sens[["Treatment_Inputs"]][,"tb_cost"]),0.025)
+quantile(c(tbcost_sens[["Control_Inputs"]][,"tb_cost"],tbcost_sens[["Treatment_Inputs"]][,"tb_cost"]),0.975)
+
+hist(tbcost_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(tbcost_sens,file=here("Data/tbcost_sens.RDS"))
+```
+
+
+Here are the results from varying only TB DALY value.
+```{r}
+#varying only TB DALY value
+tbdaly_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=FALSE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=TRUE)
+summary(tbdaly_sens[["cost_per_daly"]])
+quantile(tbdaly_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#tbdaly_sens<-readRDS("tbdaly_sens.RDS")
+max(max(tbdaly_sens[["Control_Inputs"]][,"tb_daly"]),max(tbdaly_sens[["Treatment_Inputs"]][,"tb_daly"]))
+median(median(tbdaly_sens[["Control_Inputs"]][,"tb_daly"]),median(tbdaly_sens[["Treatment_Inputs"]][,"tb_daly"]))
+min(min(tbdaly_sens[["Control_Inputs"]][,"tb_daly"]),min(tbdaly_sens[["Treatment_Inputs"]][,"tb_daly"]))
+
+quantile(c(tbdaly_sens[["Control_Inputs"]][,"tb_daly"],tbdaly_sens[["Treatment_Inputs"]][,"tb_daly"]),0.025)
+quantile(c(tbdaly_sens[["Control_Inputs"]][,"tb_daly"],tbdaly_sens[["Treatment_Inputs"]][,"tb_daly"]),0.975)
+
+hist(tbdaly_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(tbdaly_sens,file=here("Data/tbdaly_sens.RDS"))
+```
+
+Here are the results from varying only DALY value after TB.
+```{r}
+#varying only post TB DALY value
+posttbdaly_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=FALSE,oth_death_mult_c=TRUE)
+summary(posttbdaly_sens[["cost_per_daly"]])
+quantile(posttbdaly_sens[["cost_per_daly"]],c(0.025,0.975))
+
+posttbdaly_sens<-readRDS("posttbdaly_sens.RDS")
+max(max(posttbdaly_sens[["Control_Inputs"]][,"posttb_daly"]),max(posttbdaly_sens[["Treatment_Inputs"]][,"posttb_daly"]))
+median(median(posttbdaly_sens[["Control_Inputs"]][,"posttb_daly"]),median(posttbdaly_sens[["Treatment_Inputs"]][,"posttb_daly"]))
+min(min(posttbdaly_sens[["Control_Inputs"]][,"posttb_daly"]),min(posttbdaly_sens[["Treatment_Inputs"]][,"posttb_daly"]))
+
+quantile(c(posttbdaly_sens[["Control_Inputs"]][,"posttb_daly"],posttbdaly_sens[["Treatment_Inputs"]][,"posttb_daly"]),0.025)
+quantile(c(posttbdaly_sens[["Control_Inputs"]][,"posttb_daly"],posttbdaly_sens[["Treatment_Inputs"]][,"posttb_daly"]),0.975)
+
+hist(posttbdaly_sens[["cost_per_daly"]])
+
+#saving for troubleshooting afterward
+saveRDS(posttbdaly_sens,file=here("Data/posttbdaly_sens.RDS"))
+```
+
+
+Here are the results from varying only the other death multiplier.
+```{r}
+#varying only other death multiplier
+othdeathmult_sens<-cost_eff(iterations=its, tb_death_c=TRUE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=TRUE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE,oth_death_mult_c=FALSE)
+summary(othdeathmult_sens[["cost_per_daly"]])
+quantile(othdeathmult_sens[["cost_per_daly"]],c(0.025,0.975))
+
+#saving for troubleshooting afterward
+saveRDS(othdeathmult_sens,file=here("Data/othdeathmult_sens.RDS"))
+
+```
+
+
+Here we create a cost effectiveness graph, showing at what thresholds the intervention is preferable to no intervention. 
+```{r}
+ce_thresh<-seq(0:2100)
+control_ef<-cost_per_daly2
+control<-list()
+trt<-list()
+for (i in 1:length(ce_thresh)){
+  control[[i]]<-vector()
+  trt[[i]]<-vector()
+  for (j in 1:length(control_ef)){
+    trt[[i]][j]<-ifelse(ce_thresh[i]>=cost_per_daly2[j],1,0)
+    control[[i]][j]<-ifelse(trt[[i]][j]==1,0,1)
+  }           
+}
+prop1<-sapply(control,mean)
+prop2<-sapply(trt,mean)
+dat<-data.frame(ce_thresh=ce_thresh,prop1=prop1,prop2=prop2)
+
+#getting some more threshold statistics for the paper
+dat[dat$ce_thresh==550,]
+dat[dat$ce_thresh==410,]
+dat[dat$prop2>0.99,]
+
+```
+
+Now plotting this data.
+```{r}
+# Plot the cost-effectiveness acceptability curve
+library(ggplot2)
+cgraph<-ggplot( data=dat,aes(x = ce_thresh)) +
+  geom_line(aes(y = prop1), color="blue", linetype = "solid") +
+  geom_line(aes(y = prop2), color="red", linetype = "solid") +
+  labs(x = "Willingness to Pay Threshold", y = "Proportion of Cost-effective Interventions")+
+   scale_color_manual(name="Intervention",
+                     breaks=c("Nutritional Supplementation", "Control"),
+                     values=c("Nutritional Supplementation"="red","Control"="blue"))
+cgraph
+
+#saving for publication in figures folder at some point
+#save()
+
+```
+
+
+Below is a two-way sensitivity analysis figure.
+```{r message=FALSE, warning=FALSE}
+#varying only the two parameters with the most influence in sensitivity analysis
+#above
+twosens<-cost_eff(iterations=its,tb_death_c=FALSE,
+              oth_death_c=TRUE, failed_c=TRUE,ltf_c=TRUE,ltf_relap_c=TRUE,
+                   earpt_relap_c=TRUE,ltpt_relap_c=TRUE,
+                   food_cost_c=FALSE,tb_cost_c=TRUE,tb_daly_c=TRUE,
+                   posttb_daly_c=TRUE)
+
+#saving for troubleshooting afterward
+saveRDS(twosens,file=here("Data/twosens.RDS"))
+
+#GAM method for this: removing outliers over 2500 ICER and less than 0 ICER
+library(mgcv)
+xout<-twosens[["Treatment_Inputs"]][,"food_cost"][twosens[["cost_per_daly"]]<2500&
+                                                    twosens[["cost_per_daly"]]>0]
+yout<-twosens[["Treatment_Inputs"]][,"tb_death"][twosens[["cost_per_daly"]]<2500&
+                                                    twosens[["cost_per_daly"]]>0]/
+  twosens[["Control_Inputs"]][,"tb_death"][twosens[["cost_per_daly"]]<2500&
+                                                    twosens[["cost_per_daly"]]>0] #this makes it a risk ratio on the y axis
+zout<-twosens[["cost_per_daly"]][twosens[["cost_per_daly"]]<2500&
+                                                    twosens[["cost_per_daly"]]>0]
+mod_lmout <- gam(zout ~ s(xout)+s(yout)) #fitting original GAM
+#new data for predicting
+newdout<-data.frame(yout=rep(seq(0,1,by=0.0001),each=251),xout=seq(5,75,by=70/250))
+#fitting predicted GAM
+predout<-as.vector(predict.gam(mod_lmout,newdout))
+
+dataout<-data.frame(cbind(newdout$xout,newdout$yout,predout))
+dataout$pred1<-cut(dataout$predout,breaks = c(-Inf,410,550,Inf),right = FALSE)
+library(ggplot2)
+twoplot<-ggplot(dataout, aes(x=V1,y=V2)) + 
+  geom_tile(aes(fill=pred1))+xlab("Food Supplement Monthly Cost ($)")+ylab("Risk Ratio of Death from TB")+guides(fill=guide_legend(title="ICER"))+
+ ylim(min=0,max=1)+
+  scale_fill_manual(breaks=c("[-Inf,410)", "[410,550)", "[550, Inf)"),
+                        values = c("darkgreen", "yellow", "red"),
+                        labels=c("<410", "410-549","550+"))
+twoplot
+
+#saving two-way plot to avoid weird lines
+ggsave(
+  here("Figures/twoplot.png"),
+  twoplot,
+  width = 5,
+  height = 5,
+  dpi = 1000
+)
+
+#extra plots for diagnosing problems
+# ggplot(as.data.frame(cbind(xout,yout,zout)),aes(x=xout,y=zout,label=round(yout,digits=2)))+geom_point(aes(color=yout))+geom_text(hjust=0,vjust=0)
+# 
+# #GAM method for this: not removing outliers at all option
+# library(mgcv)
+# x<-twosens[["Treatment_Inputs"]][,"food_cost"]
+# y<-twosens[["Treatment_Inputs"]][,"tb_death"]/
+#   twosens[["Control_Inputs"]][,"tb_death"] #this makes it a risk ratio on the y axis
+# z<-twosens[["cost_per_daly"]]
+# mod_lm <- gam(z ~ s(x)+s(y)) #fitting original GAM
+# #new data for predicting
+# newd<-data.frame(y=rep(seq(0,1,by=0.0001),each=251),x=seq(5,50,by=45/250))
+# #fitting predicted GAM
+# pred<-as.vector(predict.gam(mod_lm,newd))
+# 
+# data<-data.frame(cbind(newd$x,newd$y,pred))
+# data$pred1<-cut(data$pred,breaks = c(-Inf,410,550,Inf),right = FALSE)
+# library(ggplot2)
+# ggplot(data, aes(x=V1,y=V2)) + 
+#   geom_tile(aes(fill=pred1))+xlab("Food Supplement Monthly Cost ($)")+ylab("Monthly Risk Ratio of Death from TB")+guides(fill=guide_legend(title="ICER"))+
+#  ylim(min=0,max=1)+
+#   scale_fill_manual(breaks=c("[-Inf,410)", "[410,550)", "[550, Inf)"),
+#                         values = c("darkgreen", "yellow", "red"),
+#                         labels=c("<410", "410-549","550+"))
+# 
+# #extra plots for diagnosing problems
+# ggplot(as.data.frame(cbind(x,y,z)),aes(x=x,y=z,label=round(y,digits=2)))+geom_point(aes(color=y))+geom_text(hjust=0,vjust=0)
+
+#getting threshold values
+t1<-dataout[dataout$V1>49 & dataout$predout>549 & dataout$predout<551 & dataout$V2<0.752
+            &dataout$V2>0.748,]
+t2<-dataout[dataout$V1>30 & dataout$predout>409 & dataout$predout<411& dataout$V2<0.752
+            &dataout$V2>0.748,]
+t1
+t2
+#t3<-data[data$V1>79 & data$pred>549 & data$pred<550,]
+#t4<-data[data$V1>79 & data$pred>409 & data$pred<410,]
+  
+```
+
+
+Below is a survival curve visualizing the death of patients over the study. This
+now uses median numbers for each month across the 10,000 iterations.
+```{r}
+cont<-list()
+for (j in 1:its){
+  cont[[j]]<-as.vector(main_run[["Subjects_cont"]][[j]][,"die_other_cause_tb"]+
+                      main_run[["Subjects_cont"]][[j]][,"die_other_cause_posttb"]+
+                         main_run[["Subjects_cont"]][[j]][,"die_tb"])
+}
+library(dplyr)
+cont2<-as.data.frame(do.call(rbind, cont))
+survival<-10000-(apply(cont2,2,median))
+con<-cbind(survival,"Control",(seq(1:720)/12))
+
+trtt<-list()
+for (j in 1:its){
+  trtt[[j]]<-as.vector(main_run[["Subjects_trt"]][[j]][,"die_other_cause_tb"]+main_run[["Subjects_trt"]][[j]][,"die_tb"]+main_run[["Subjects_trt"]][[j]][,"die_other_cause_posttb"])
+}
+library(dplyr)
+trtt2<-as.data.frame(do.call(rbind, trtt))
+survival<-10000-(apply(trtt2,2,median))
+trt<-cbind(survival,"Treatment",(seq(1:720)/12))
+
+# survival<-10000-(main_run[["Subjects_cont"]][,"die_other_cause"]+main_run[["Subjects_cont"]][,"die_tb"])
+# con<-cbind(survival,"Control",(seq(1:720)/12))
+# survival<-10000-(main_run[["Subjects_trt"]][,"die_other_cause"]+main_run[["Subjects_trt"]][,"die_tb"])
+# trt<-cbind(survival,"Treatment",(seq(1:720)/12))
+
+
+graph<-data.frame(rbind(con,trt))
+graph$survival<-as.numeric(graph$survival)
+graph$V3<-as.numeric(graph$V3)
+library(ggplot2)
+survplot<-ggplot(data=graph, aes(x=V3, y=survival, group=factor(V2))) +
+  geom_line(aes(color=factor(V2)))+ylab("Surviving Patients")+xlab("Years Since Intervention Start")+theme(legend.title=element_blank())
+survplot
+
+#saving figure for publication at some point in figures folder
+#save()
+```
+
+
+
