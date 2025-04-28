@@ -32,7 +32,8 @@ TB_state_wide<-function(tb_death,oth_death,
   #adding in increased risk of death for cured patients with other death 
   #multiplier
   On_TB_tx_M6<-c(0,0,0,0,-1,rep(0,15)) 
-                     0,rep(oth_death,5),0)
+  die_other_cause_tb<-c(rep(oth_death,6),1,0,0,oth_death,0,0,0, 
+                        0,rep(oth_death,5),0)
   die_other_cause_posttb<-c(rep(0,7),1,0,0,0,(oth_death_mult*oth_death),
                             (oth_death_mult*oth_death),
                             rep(0,7))
