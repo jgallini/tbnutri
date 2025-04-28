@@ -15,7 +15,7 @@ library(here)
 source(here("Code/cost_eff.R"))
 
 #setting number of iterations to use for these simulations throughout the program
-its<-100
+its<-10000
 
 main_run<-cost_eff(iterations = its)
 cost_per_daly2<-sort(main_run[["cost_per_daly"]])
