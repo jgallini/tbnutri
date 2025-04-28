@@ -1,26 +1,30 @@
 
-# This function runs cost effectiveness analyses for a nutritional intervention in TB patients
-# in India. The inputs are iterations (any integer), and a set of logical (TRUE/FALSE) inputs 
-# for whether or not to hold a particular parameter constant. These options should be used for 
-# deterministic sensitivity analyses. The default for all of these inputs in FALSE, so each 
-# parameter will be varied according to the appropriate distribution if no option is specified.
+# This function runs cost effectiveness analyses for a nutritional intervention 
+# in TB patients in India. The inputs are iterations (any integer), 
+# and a set of logical (TRUE/FALSE) inputs for whether or not to hold a 
+# particular parameter constant. These options should be used for 
+# deterministic sensitivity analyses. The default for all of these inputs is 
+# FALSE, so each parameter will be varied according to the appropriate 
+# distribution if no option is specified.
 
 cost_eff<-function(iterations,tb_death_c=FALSE,
-                   oth_death_c=FALSE, failed_c=FALSE, ltf_c=FALSE,ltf_relap_c=FALSE,
+                   oth_death_c=FALSE, failed_c=FALSE, ltf_c=FALSE,
+                   ltf_relap_c=FALSE,
                    earpt_relap_c=FALSE,ltpt_relap_c=FALSE,
                    food_cost_c=FALSE,tb_cost_c=FALSE,tb_daly_c=FALSE,
                    posttb_daly_c=FALSE,oth_death_mult_c=FALSE){
   
-  #Here using with Latin hypercube sampling to get the matrix of control probabilities.
-  #The iteration we're on will correspond to the row of this matrix
-
-  library(parallel)
-  library(doParallel)
-  library(foreach)
+  #specifying required libraries
   library(lhs)
   library(mc2d)
+  
+  #setting seed and number of parameters that will vary
   set.seed(84937)
-  params<-12 #number of parameters to vary
+  params<-12 
+  
+  #Setting up using with Latin hypercube sampling to get the matrix of control 
+  #probabilities.
+  #The iteration we're on will correspond to the row of this matrix
   A <- randomLHS(iterations,params)
   B <- matrix(nrow = iterations, ncol = params) 
   
@@ -29,16 +33,19 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   p1<-0.128 #6 month probability from Pranay (1.29.25 email)
   r1<-(-log(1-p1)/6) #6 month rate
   mu1<-1-exp(-r1) #1 month probability
-  var1<-0.01**2 #just using variance of 6 month distribution to allow for more variability than the 1 month would
+  var1<-0.01**2 #just using variance of 6 month distribution to 
+  #allow for more variability than the 1 month would
   alpha1 <- ((1 - mu1) / var1 - 1 / mu1) * mu1 ^ 2
   beta1 <- alpha1 * (1 / mu1 - 1)
   percs1<-qbeta(c(0.025, 0.975),alpha1,beta1)
   B[,1] <- qbeta(A[,1], shape1 = alpha1, shape2= beta1) 
   #Other (background) death
-  p3<-0.023669 #5 year (60 month) probability of background death from life table ages 45-49
+  p3<-0.023669 #5 year (60 month) probability of background death from life 
+  #table ages 45-49
   r2<-(-log(1-p3)/60) #60 month rate
   p4<-1-exp(-r2) #1 month probability: 0.000399
-  B[,2] <- qpert(A[,2],mean=0.000399,max=1.2*0.000399,min=0.8*0.000399) #taking point estimate plus/minus 20%
+  B[,2] <- qpert(A[,2],mean=0.000399,max=1.2*0.000399,min=0.8*0.000399) 
+  #taking point estimate plus/minus 20%
   percs2<-qpert(c(0.025,0.975),mean=p4,max=1.2*p4,min=0.8*p4)
   #LTF
   p2<-0.052 #6 month probability from Pranay (1.29.25 email)
@@ -48,10 +55,11 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   alpha2 <- ((1 - mu2) / var2 - 1 / mu2) * mu2 ^ 2
   beta2 <- alpha2 * (1 / mu2 - 1)
   percs3<-qbeta(c(0.025, 0.975),shape1=alpha2,shape2=beta2)
-  B[,3] <- qbeta(A[,3], shape1=alpha2,shape2=beta2) #this variance
+  B[,3] <- qbeta(A[,3], shape1=alpha2,shape2=beta2) 
   #Food cost
-  B[,4]<- qgamma(A[,4],shape=23,scale=1) #changed after meeting 8.19.24 to 
+  B[,4]<- qgamma(A[,4],shape=23,scale=1) 
   percs4<-qgamma(c(0.025,0.975),shape=23,scale=1)
+  #changed after meeting 8.19.24 to
   #mean of 23 and var of 23 from mean of 43 based on Pranay's calculations
   #TB cost
   B[,5]<- qgamma(A[,5],shape=25,scale=0.8)
@@ -72,10 +80,12 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   percs8<-qbeta(c(0.025, 0.975),shape1 = alpha8, shape2= beta8)
   B[,8] <- qbeta(A[,8], shape1 = alpha8, shape2= beta8)
   #ltf_relap (from LTF to relapse)
-  p9<-((158/(158+1210))*1.61) #12 month beta distribution from Pranay (2.1.24 email)
+  p9<-((158/(158+1210))*1.61) #12 month beta distribution from Pranay: 
+  #(2.1.24 email)
   r9<-(-log(1-p9)/12) #12 month rate
   mu9<-1-exp(-r9) #1 month probability
-  var9<-(158*1210)/(((158+1210)**2)*(158+1210+1))/(36*(1.61**2)) #converting variance of 6 month distribution to 
+  var9<-(158*1210)/(((158+1210)**2)*(158+1210+1))/(36*(1.61**2)) 
+  #converting variance of 6 month distribution to 
   #1 month by dividing by 36 and also 1.61 multiplier squared
   alpha9 <- ((1 - mu9) / var9 - 1 / mu9) * mu9 ^ 2
   beta9 <- alpha9 * (1 / mu9 - 1)
@@ -85,15 +95,18 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   p10<-(158/(158+1210)) #12 month beta distribution from Pranay (1.30.24 email)
   r10<-(-log(1-p10)/12) #12 month rate
   mu10<-1-exp(-r10) #1 month probability
-  var10<-(158*1210)/(((158+1210)**2)*(158+1210+1))/(36) #converting variance of 6 month distribution to 
+  var10<-(158*1210)/(((158+1210)**2)*(158+1210+1))/(36) 
+  #converting variance of 6 month distribution to 
   #1 month by dividing by 36
   alpha10 <- ((1 - mu10) / var10 - 1 / mu10) * mu10 ^ 2
   beta10 <- alpha10 * (1 / mu10 - 1)
   percs10<-qbeta(c(0.025, 0.975),shape1 = alpha10, shape2= beta10)
   B[,10] <- qbeta(A[,10], shape1 = alpha10, shape2= beta10)
   #ltpt_relap (from late post treatment to relapse)
-  B[,11]<-qpert(A[,11],min=((169/100000)/12),max=((231/100000)/12),mean=((199/100000)/12))
-  percs11<-qpert(c(0.025, 0.975),min=((169/100000)/12),max=((231/100000)/12),mean=((199/100000)/12))
+  B[,11]<-qpert(A[,11],min=((169/100000)/12),max=((231/100000)/12),
+                mean=((199/100000)/12))
+  percs11<-qpert(c(0.025, 0.975),min=((169/100000)/12),max=((231/100000)/12),
+                 mean=((199/100000)/12))
   #other death multiplier (Pranay email 10.25.24)
   B[,12]<-exp(qpert(A[,12],min=log(1.02),max=log(1.34),mean=log(1.14)))
   
@@ -104,8 +117,8 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
                  "oth_death_mult")
   
   #This section takes into account the user inputs for which variables should be 
-  #held constant. Parameters are overwritten with their theoretical mean for all values
-  #if it's specified that parameter be held constant. If LTF is specified 
+  #held constant. Parameters are overwritten with their theoretical mean for all 
+  #values if it's specified that parameter be held constant. If LTF is specified 
   #constant all months are constant.
   
   if (tb_death_c==TRUE) {B[,"tb_death"]<-mu1}
@@ -130,51 +143,30 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   
   #TB death: from Pranay email 10.30.24
   #draw random risk ratio from beta distribution to keep less than 1
-  
-  #rr<-c(rep(0.34,33),rep(0.64,33),rep(0.94,34))
-  
   rr<-qbeta(C[,1],shape1=4,shape2=2.25)
-  rrpercs1<-qbeta(c(0.025,0.975),shape1=4,shape2=2.25)
-  
-  #previously:pert distribution 0.64 (0.10-4.34) and using re-draw code below
-  
-  #writing in stipulation that tb death rr must be 
-  #less than or equal to 1; if not re-draw parameters. 
-  #IGNORE in case of TB death being 
-  #held constant for sensitivity analyses
-  # tbdeath_replace<-0
-  # if(tb_death_c==FALSE){
-  #   success_tbdeath <- rr<=1
-  #   tbdeath_replace<-sum(success_tbdeath==FALSE)
-  #   for (q in 1:iterations){
-  #     while (!success_tbdeath[q]) {
-  #       C[q,1]<-runif(1)  
-  #       rr[q]<-exp(qpert(C[q,1],min=log(0.1),max=log(4.34),mean=log(0.64)))
-  #       # check for success
-  #       success_tbdeath[q] <- rr[q]<=1
-  #     }
-  #   }
-  # }
+  #rrpercs1<-qbeta(c(0.025,0.975),shape1=4,shape2=2.25)
   #multiply risk ratios by control parameters to get probability 
   #of TB death for treatment group
   D[,1]<-rr*B[,1] 
-  #D[,1]<-rr*mu1
   #Other death: same as control other death
   D[,2] <- B[,2]
-  #LTF, now using risk ratio from Pranay email 10.15.24
+  #LTF, now using risk ratio from Pranay email 10.15.24, multiplying by
+  #control parameter
   D[,3] <- exp(qpert(C[,3],min=log(0.28),max=log(0.77),mean=log(0.45)))*B[,3] 
-  rrpercs2<-exp(qpert(c(0.025, 0.975),min=log(0.28),max=log(0.77),mean=log(0.45)))
-  #Food cost
-  D[,4]<- B[,4]  #qgamma(C[,4],shape=25,scale=1.72) keeping same cost for trt and ctrl
-  #TB cost
-  D[,5]<- B[,5] #qgamma(C[,5],shape=25,scale=0.8) also keeping same cost here
+  #rrpercs2<-exp(qpert(c(0.025, 0.975),min=log(0.28),max=log(0.77),
+  #mean=log(0.45)))
+  #Food cost (same as control)
+  D[,4]<- B[,4]
+  #TB cost (same as control)
+  D[,5]<- B[,5]
   #TB DALY value (same as control)
   D[,6]<- B[,6]
   #Long term increased DALY for former TB patients (same as control)
   D[,7]<- B[,7]
-  #failed, now using risk ratio from email Pranay 10.15.24
+  #failed, now using risk ratio from email Pranay 10.15.24, multiplying by
+  #control group
   D[,8]<-exp(qpert(C[,8],min=log(0.03),max=log(0.4),mean=log(0.1)))*B[,8]
-  rrpercs3<-exp(qpert(c(0.025, 0.975),min=log(0.03),max=log(0.4),mean=log(0.1)))
+  #rrpercs3<-exp(qpert(c(0.025, 0.975),min=log(0.03),max=log(0.4),mean=log(0.1)))
   #ltf_relap (same as control group)
   D[,9] <- B[,9]
   #earpt_relap (same as control group)
@@ -184,7 +176,6 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   #oth_death_mult (same as control group)
   D[,12]<-B[,12]
   
-  
   #naming columns
   colnames(D)<-c("tb_death","oth_death","ltf",
                  "food_cost","tb_cost","tb_daly","posttb_daly",
@@ -193,8 +184,8 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   
   
   #This section takes into account the user inputs for which variables should be 
-  #held constant. Parameters are overwritten with their theoretical mean for all values
-  #if it's specified that parameter be held constant. 
+  #held constant. Parameters are overwritten with their theoretical mean for all 
+  #values if it's specified that parameter be held constant. 
   
   if (tb_death_c==TRUE) {D[,"tb_death"]<-mu1*0.64}
   if (oth_death_c==TRUE) {D[,"oth_death"]<-0.000399}
@@ -222,46 +213,44 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
   cost_dif<-vector()
   daly_av2<-vector()
 
-  # #SETTING UP PARALLEL CODE FROM GENEVIEVE
-  # detectCores() # the maximum numbers of cores you can register
-  # ( ncores <- as.numeric( Sys.getenv("NSLOTS") ) ) # if running in batch
-  # if ( is.na(ncores) ) ncores <- 8
-  # 
-  # cl <- makeCluster(ncores) #input is the number of cores to use
-  # registerDoParallel(cl)
-  
   Subjects_trt<-list()
   Subjects_cont<-list()
   
   # This is a function that will iterate through a certain number of times
   for(i in 1:iterations) {
       
-    # now calling function that creates transition matrices for treatment
+    # now calling custom function that creates transition matrices for treatment
     # and control groups
     source(here("Code/Transition_function_wide.R"))
-    Subjects_trt[[i]]<-TB_state_wide(Treatment_Inputs[i,1],Treatment_Inputs[i,2],
+    Subjects_trt[[i]]<-TB_state_wide(Treatment_Inputs[i,1],
+                                     Treatment_Inputs[i,2],
                                 Treatment_Inputs[i,3],Treatment_Inputs[i,3],
                                 Treatment_Inputs[i,3],Treatment_Inputs[i,3],
-                                Treatment_Inputs[i,3],Treatment_Inputs[i,3], #same LTF value for all 6 months of treatment
+                                Treatment_Inputs[i,3],Treatment_Inputs[i,3], 
+                                #same LTF value for all 6 months of treatment
                                 Treatment_Inputs[i,8],Treatment_Inputs[i,9],
                                 Treatment_Inputs[i,10],Treatment_Inputs[i,11],
                                 Treatment_Inputs[i,12])
     
-    Subjects_cont[[i]]<-TB_state_wide(Control_Inputs[i,1],Control_Inputs[i,2],
+    Subjects_cont[[i]]<-TB_state_wide(Control_Inputs[i,1],
+                                      Control_Inputs[i,2],
                                  Control_Inputs[i,3],Control_Inputs[i,3],
                                  Control_Inputs[i,3],Control_Inputs[i,3],
-                                 Control_Inputs[i,3],Control_Inputs[i,3],#same LTF value for all 6 months of treatment
+                                 Control_Inputs[i,3],Control_Inputs[i,3],
+                                 #same LTF value for all 6 months of treatment
                                  Control_Inputs[i,8],Control_Inputs[i,9],
                                  Control_Inputs[i,10],Control_Inputs[i,11],
                                  Control_Inputs[i,12])
     
     #subsetting into relevant states for control active TB DALY calculation
     Control_d<-subset(Subjects_cont[[i]],select=-c(die_other_cause_tb,
-                                                   die_other_cause_posttb,die_tb,ltfu,
+                                                   die_other_cause_posttb,
+                                                   die_tb,ltfu,
                                                    early_posttrt,late_posttrt))
     
     #subsetting into relevant states for control post TB DALY calculation
-    Control_postd<-subset(Subjects_cont[[i]],select=c(early_posttrt,late_posttrt,ltfu))
+    Control_postd<-subset(Subjects_cont[[i]],select=c(early_posttrt,
+                                                      late_posttrt,ltfu))
     
     #summing control TB DALY's by month
     s1<-Control_Inputs[i,"tb_daly"]*Control_d #DALY's from having active TB
@@ -282,7 +271,10 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
     s12post<-Control_backded*(1/12)*(0.14)
     ded2<-as.vector(rowSums(s12tb))+as.vector(rowSums(s12post))
     
+    #setting discounting rate
     rate<-0.03
+    
+    #summing DALY's by month
     dvec<-ded2+sum_d
     
     #splits months into groups by year
@@ -305,10 +297,12 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
     
     ####### treatment DALY's
     
-    #subsetting into relevant states for treatment DALY calculation for active TB
+    #subsetting into relevant states for treatment DALY calculation for active 
+    #TB
     Trt_d<-subset(Subjects_trt[[i]],select=-c(die_other_cause_tb,
                                               die_other_cause_posttb,
-                                              die_tb,ltfu,early_posttrt,late_posttrt))
+                                              die_tb,ltfu,early_posttrt,
+                                              late_posttrt))
     
     #subsetting into relevant states for post TB DALY's
     Trt_dp<-subset(Subjects_trt[[i]],select=c(early_posttrt,late_posttrt,ltfu))
@@ -320,17 +314,22 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
     
     #treatment background deaths, selecting out states that are relevant
     #ignoring background deaths that occur during TB states
-    Treatment_dedpost<-subset(Subjects_trt[[i]],select=c(die_other_cause_posttb))
+    Treatment_dedpost<-subset(Subjects_trt[[i]],
+                              select=c(die_other_cause_posttb))
     
     #treatment tb deaths, selecting states that are relevant
     Treatment_dedtb<-subset(Subjects_trt[[i]],select=c(die_tb))
     
     #summing treatment deaths
     s12ttb<-(1/12)*Treatment_dedtb
-    s12tpost<-(1/12)*Treatment_dedpost*(0.14)#again scaling by excess death post tb
+    s12tpost<-(1/12)*Treatment_dedpost*(0.14)
+    #again scaling by excess death post tb
     sum_d2t<-as.vector(rowSums(s12ttb))+as.vector(rowSums(s12tpost))
     
+    #setting discounting rate
     rate<-0.03
+    
+    #summing DALY's by month
     dvect<-sum_d2t+sum_dt
     
     #splits months into groups by year
@@ -350,7 +349,6 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
     }
     Treatment_DALYS[i]<-sum(unlist(u2t))
     
-    
     #Now calculating total DALY's averted.
     #total DALY's averted
     daly_av2[i]<-Control_DALYS[i]-Treatment_DALYS[i]
@@ -358,12 +356,13 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
     
     # Next the total costs for the control group and the intervention group are 
     # calculated. The cost of TB treatment was summed over patients in active 
-    # treatment states over the 60 year period. This was done for both control and 
-    # intervention groups. Additionally for the intervention group, costs of food were
-    # summed over patients in active treatment states over the 60 year period. 
-    # Discounting was applied at a 3% rate for both intervention and control. The 
-    # costs of treatment and food were summed for intervention patients. Then, the 
-    # difference in costs was subtracted between the intervention and control groups
+    # treatment states over the 60 year period. This was done for both control 
+    # and intervention groups. Additionally for the intervention group, costs of 
+    # food were summed over patients in active treatment states over the 60 year
+    # period. Discounting was applied at a 3% rate for both intervention and 
+    # control. The costs of treatment and food were summed for intervention 
+    # patients. Then, the difference in costs was subtracted between the 
+    # intervention and control groups.
     
     #control costs
     #selecting out states that are relevant
@@ -393,9 +392,6 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
       u2c[j]<-u1c[j]/((1+rate)**j)
     }
     ctrl_csum[i]<-sum(unlist(u2c))
-    
-    #summing control costs (just TB treatment)
-    #ctrl_csum[i]<-sum(Control_Inputs[i,"tb_cost"]*Control_c)
     
     #treatment costs
     #selecting out states that are relevant
@@ -436,11 +432,12 @@ cost_eff<-function(iterations,tb_death_c=FALSE,
     
       #print(paste(i))
   }
-  #stopcluster
+
   #outputting data we need to use in results file
   return(list(cost_per_daly=cost_per_daly,Control_DALYS=Control_DALYS,
-              Treatment_DALYS=Treatment_DALYS,ctrl_csum=ctrl_csum,trt_csum=trt_csum,
-              Control_Inputs=Control_Inputs,Treatment_Inputs=Treatment_Inputs,
+              Treatment_DALYS=Treatment_DALYS,ctrl_csum=ctrl_csum,
+              trt_csum=trt_csum,Control_Inputs=Control_Inputs,
+              Treatment_Inputs=Treatment_Inputs,
               Subjects_cont=Subjects_cont,Subjects_trt=Subjects_trt))
 
 }

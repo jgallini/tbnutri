@@ -4,9 +4,13 @@ output:
   html_document: default
 ---
 
-This program creates the main results for the cost effectiveness analysis of a nutritional supplementation program for TB patients in India.
+This program creates the main results for the cost effectiveness analysis of a 
+nutritional supplementation program for TB patients in India. It uses the 
+function "cost_eff" to perform cost-effectiveness calculations for a given
+scenario based on a series of user-defined inputs.
 
-First, we calculate the estimated cost per DALY of the intervention and 95% confidence interval. 
+First, we calculate the estimated cost per DALY of the intervention and 95% 
+confidence interval. 
 ```{r}
 
 #bringing in cost effectiveness function and necessary libraries
@@ -14,7 +18,8 @@ here::i_am("Code/Cost_Effectiveness_Results.Rmd")
 library(here)
 source(here("Code/cost_eff.R"))
 
-#setting number of iterations to use for these simulations throughout the program
+#setting number of iterations to use for these 
+#simulations throughout the program
 its<-10000
 
 main_run<-cost_eff(iterations = its)
@@ -23,13 +28,8 @@ quantile(cost_per_daly2,c(0.025,0.5,0.975))
 
 hist(cost_per_daly2[cost_per_daly2<2500&cost_per_daly2>0])
 
-#investigating off center results
-plot(main_run[["Treatment_Inputs"]][,"tb_death"][main_run[["cost_per_daly"]]<2500]/
-       main_run[["Control_Inputs"]][,"tb_death"][main_run[["cost_per_daly"]]<2500],
-     main_run[["cost_per_daly"]][main_run[["cost_per_daly"]]<2500])
-
 #saving for troubleshooting afterward
-#saveRDS(main_run,file=here("Data/main_run.RDS"))
+saveRDS(main_run,file=here("Data/main_run.RDS"))
 ```
 
 Now calculating some statistics from the main run to report in the paper.
@@ -193,7 +193,10 @@ yrs_tbdaly_cont_n<-vector()
 dal_c<-vector()
 dal_c2<-vector()
 for (i in 1:length(main_run[["Subjects_cont"]])){
-  dal_c<-unname(0.02775*rowSums(main_run[["Subjects_cont"]][[i]][c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6","failed","relapse", "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6")]))
+  dal_c<-unname(0.02775*rowSums(main_run[["Subjects_cont"]][[i]][c(
+    "On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5",
+    "On_TB_tx_M6","failed","relapse", "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4",
+    "repeat_tb_tx_M5","repeat_tb_tx_M6")]))
   #split months into groups by year
   dcheck1<-split(dal_c,ceiling(seq_along(dal_c)/12))
   
@@ -215,7 +218,8 @@ yrs_tbdaly_trt_n<-vector()
 dal_t<-vector()
 dal_t2<-vector()
 for (i in 1:length(main_run[["Subjects_trt"]])){
- dal_t<-unname(0.02775*rowSums(main_run[["Subjects_trt"]][[i]][c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6","failed","relapse", "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6")]))
+ dal_t<-unname(0.02775*rowSums(main_run[["Subjects_trt"]][[i]][c("On_TB_tx_M1",                                    "On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5", "On_TB_tx_M6","failed","relapse","repeat_tb_tx_M1","repeat_tb_tx_M2",
+ "repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6")]))
  #split months into groups by year
   dcheck2<-split(dal_t,ceiling(seq_along(dal_t)/12))
   
@@ -242,7 +246,9 @@ yrs_posttbdaly_cont_n<-vector()
 pdal_c<-vector()
 pdal_c2<-vector()
 for (i in 1:length(main_run[["Subjects_cont"]])){
-  pdal_c<-unname(0.0044*rowSums(main_run[["Subjects_cont"]][[i]][c("early_posttrt","late_posttrt","ltfu")]))
+  pdal_c<-unname(0.0044*rowSums(main_run[["Subjects_cont"]][[i]][c("early_posttrt",
+                                                                   "late_posttrt",
+                                                                   "ltfu")]))
   #split months into groups by year
   dcheck3<-split(pdal_c,ceiling(seq_along(pdal_c)/12))
   
@@ -262,7 +268,9 @@ yrs_posttbdaly_trt_n<-vector()
 pdal_t<-vector()
 pdal_t2<-vector()
 for (i in 1:length(main_run[["Subjects_trt"]])){
-  pdal_t<-unname(0.0044*rowSums(main_run[["Subjects_trt"]][[i]][c("early_posttrt","late_posttrt","ltfu")]))
+  pdal_t<-unname(0.0044*rowSums(main_run[["Subjects_trt"]][[i]][c("early_posttrt",
+                                                                  "late_posttrt",
+                                                                  "ltfu")]))
   #split months into groups by year
   dcheck4<-split(pdal_t,ceiling(seq_along(pdal_t)/12))
   
@@ -283,10 +291,12 @@ quantile(yrs_posttbdaly_trt_n,c(0.025,0.5,0.975))
 
 #totals
 #control
-cont_total<-rowSums(cbind(yrs_posttbdaly_cont_n,yrs_tbdaly_cont_n,yrs_posttb_cont_n,yrs_tbdeath_cont_n))
+cont_total<-rowSums(cbind(yrs_posttbdaly_cont_n,yrs_tbdaly_cont_n,
+                          yrs_posttb_cont_n,yrs_tbdeath_cont_n))
 quantile(cont_total,c(0.025,0.5,0.975))
 #treatment
-trt_total<-rowSums(cbind(yrs_posttb_trt_n,yrs_posttbdaly_trt_n,yrs_tbdaly_trt_n,yrs_tbdeath_trt_n))
+trt_total<-rowSums(cbind(yrs_posttb_trt_n,yrs_posttbdaly_trt_n,
+                         yrs_tbdaly_trt_n,yrs_tbdeath_trt_n))
 quantile(trt_total,c(0.025,0.5,.975))
 
 #total cost statistics
@@ -297,7 +307,10 @@ quantile(main_run[["trt_csum"]],c(0.025,0.5,0.975))
 tbonly_csum<-vector()
 rate<-0.03
 for (i in 1:length(main_run[["trt_csum"]])){
-  Intervention_c<-subset(main_run[["Subjects_trt"]][[i]],select=c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6",           "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6"))
+  Intervention_c<-subset(main_run[["Subjects_trt"]][[i]],
+                         select=c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3",
+                                  "On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6",           "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4",
+                                  "repeat_tb_tx_M5","repeat_tb_tx_M6"))
   
     tbonly_cost<-main_run[["Treatment_Inputs"]][i,"tb_cost"]*Intervention_c 
     sum_dtt<-as.vector(rowSums(tbonly_cost))
@@ -325,7 +338,9 @@ quantile(tbonly_csum,c(0.025,0.5,0.975))
 foodonly_csum<-vector()
 rate<-0.03
 for (i in 1:length(main_run[["trt_csum"]])){
-  Intervention_c<-subset(main_run[["Subjects_trt"]][[i]],select=c("On_TB_tx_M1","On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6",           "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4","repeat_tb_tx_M5","repeat_tb_tx_M6"))
+  Intervention_c<-subset(main_run[["Subjects_trt"]][[i]],select=c("On_TB_tx_M1",
+  "On_TB_tx_M2","On_TB_tx_M3","On_TB_tx_M4","On_TB_tx_M5","On_TB_tx_M6",           "repeat_tb_tx_M1","repeat_tb_tx_M2","repeat_tb_tx_M3","repeat_tb_tx_M4",
+  "repeat_tb_tx_M5","repeat_tb_tx_M6"))
   
     foodonly_cost<-main_run[["Treatment_Inputs"]][i,"food_cost"]*Intervention_c 
     sum_dtt<-as.vector(rowSums(foodonly_cost))
@@ -363,7 +378,8 @@ quantile(main_run[["Control_Inputs"]][,"food_cost"],c(0.025,0.5,0.975))
 ```
 
 
-Here we run deterministic sensitivity analyses where all parameters except for 1 are held constant to determine the impact of each individual parameter. 
+Here we run deterministic sensitivity analyses where all parameters except for 1 
+are held constant to determine the impact of each individual parameter. 
 
 Here are the results from varying only TB death probability.
 ```{r}
@@ -395,8 +411,7 @@ hist(tbdeath_sens[["cost_per_daly"]])
 saveRDS(tbdeath_sens,file=here("Data/tbdeath_sens.RDS"))
 
 #additional threshold analyses
-ts1<-as.data.frame(cbind(tbdeath_sens[["cost_per_daly"]],tbdeath_sens[["Treatment_Inputs"]][,"tb_death"],
-           tbdeath_sens[["Control_Inputs"]][,"tb_death"]))
+ts1<-as.data.frame(cbind(tbdeath_sens[["cost_per_daly"]],tbdeath_sens[["Treatment_Inputs"]][,"tb_death"],tbdeath_sens[["Control_Inputs"]][,"tb_death"]))
 ts1[ts1$V1>549&ts1$V1<552,]
 0.012199949/0.01380457
 ts1[ts1$V1>409&ts1$V1<410,]
@@ -858,34 +873,6 @@ ggsave(
   dpi = 1000
 )
 
-#extra plots for diagnosing problems
-# ggplot(as.data.frame(cbind(xout,yout,zout)),aes(x=xout,y=zout,label=round(yout,digits=2)))+geom_point(aes(color=yout))+geom_text(hjust=0,vjust=0)
-# 
-# #GAM method for this: not removing outliers at all option
-# library(mgcv)
-# x<-twosens[["Treatment_Inputs"]][,"food_cost"]
-# y<-twosens[["Treatment_Inputs"]][,"tb_death"]/
-#   twosens[["Control_Inputs"]][,"tb_death"] #this makes it a risk ratio on the y axis
-# z<-twosens[["cost_per_daly"]]
-# mod_lm <- gam(z ~ s(x)+s(y)) #fitting original GAM
-# #new data for predicting
-# newd<-data.frame(y=rep(seq(0,1,by=0.0001),each=251),x=seq(5,50,by=45/250))
-# #fitting predicted GAM
-# pred<-as.vector(predict.gam(mod_lm,newd))
-# 
-# data<-data.frame(cbind(newd$x,newd$y,pred))
-# data$pred1<-cut(data$pred,breaks = c(-Inf,410,550,Inf),right = FALSE)
-# library(ggplot2)
-# ggplot(data, aes(x=V1,y=V2)) + 
-#   geom_tile(aes(fill=pred1))+xlab("Food Supplement Monthly Cost ($)")+ylab("Monthly Risk Ratio of Death from TB")+guides(fill=guide_legend(title="ICER"))+
-#  ylim(min=0,max=1)+
-#   scale_fill_manual(breaks=c("[-Inf,410)", "[410,550)", "[550, Inf)"),
-#                         values = c("darkgreen", "yellow", "red"),
-#                         labels=c("<410", "410-549","550+"))
-# 
-# #extra plots for diagnosing problems
-# ggplot(as.data.frame(cbind(x,y,z)),aes(x=x,y=z,label=round(y,digits=2)))+geom_point(aes(color=y))+geom_text(hjust=0,vjust=0)
-
 #getting threshold values
 t1<-dataout[dataout$V1>49 & dataout$predout>549 & dataout$predout<551 & dataout$V2<0.752
             &dataout$V2>0.748,]
@@ -922,12 +909,6 @@ trtt2<-as.data.frame(do.call(rbind, trtt))
 survival<-10000-(apply(trtt2,2,median))
 trt<-cbind(survival,"Treatment",(seq(1:720)/12))
 
-# survival<-10000-(main_run[["Subjects_cont"]][,"die_other_cause"]+main_run[["Subjects_cont"]][,"die_tb"])
-# con<-cbind(survival,"Control",(seq(1:720)/12))
-# survival<-10000-(main_run[["Subjects_trt"]][,"die_other_cause"]+main_run[["Subjects_trt"]][,"die_tb"])
-# trt<-cbind(survival,"Treatment",(seq(1:720)/12))
-
-
 graph<-data.frame(rbind(con,trt))
 graph$survival<-as.numeric(graph$survival)
 graph$V3<-as.numeric(graph$V3)
@@ -936,8 +917,6 @@ survplot<-ggplot(data=graph, aes(x=V3, y=survival, group=factor(V2))) +
   geom_line(aes(color=factor(V2)))+ylab("Surviving Patients")+xlab("Years Since Intervention Start")+theme(legend.title=element_blank())
 survplot
 
-#saving figure for publication at some point in figures folder
-#save()
 ```
 
 

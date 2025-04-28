@@ -1,15 +1,19 @@
 
 
-# Creating function for Multi-State Markov Model for TB nutritional supplementation
+# Creating function for Multi-State Markov Model for TB nutritional 
+# supplementation
 
-# This function allows inputs for probability of: LTF from TB tx Months 1-6, death from TB, 
+# This function allows inputs for probability of: 
+# LTF from TB tx Months 1-6, death from TB, 
 # death from other causes, treatment failure, relapsing from LTF state, 
-# relapsing from early post-treatment state, and relapsing from late post-treatment state
+# relapsing from early post-treatment state, and relapsing from late 
+# post-treatment state
 
 # It defaults to 10,000 subjects all entering at the beginning and 
 # runs for 60 years (720 months)
 
-# This version of the function creates a wide 720x20 data frame with months as the rows and 
+# This version of the function creates a wide 720x20 data frame with months 
+# as the rows and 
 # all 20 states as the columns
 
 # Coder: Julia Gallini. PI: Pranay Sinha.
@@ -19,18 +23,15 @@ TB_state_wide<-function(tb_death,oth_death,
                         failed,ltf_relap,earpt_relap,ltpt_relap,
                         oth_death_mult){
   
-  #these should not be constant, they should vary too
-  #fail<-0.058
-  #rel<-0.005
-  
   #forming columns
   On_TB_tx_M1<-c(rep(0,20))
   On_TB_tx_M2<-c(-1,rep(0,19))
   On_TB_tx_M3<-c(0,-1,rep(0,18))
   On_TB_tx_M4<-c(0,0,-1,rep(0,17))
   On_TB_tx_M5<-c(0,0,0,-1,rep(0,16))
-  On_TB_tx_M6<-c(0,0,0,0,-1,rep(0,15)) #adding in increased risk of death for cured patients with other death multiplier
-  die_other_cause_tb<-c(rep(oth_death,6),1,0,0,oth_death,0,0,0,
+  #adding in increased risk of death for cured patients with other death 
+  #multiplier
+  On_TB_tx_M6<-c(0,0,0,0,-1,rep(0,15)) 
                      0,rep(oth_death,5),0)
   die_other_cause_posttb<-c(rep(0,7),1,0,0,0,(oth_death_mult*oth_death),
                             (oth_death_mult*oth_death),
@@ -86,11 +87,15 @@ TB_state_wide<-function(tb_death,oth_death,
     
     #different oth_death option for each age range
     mat2[,"die_other_cause_tb"]<-(1.50**(ind-1))*mat2[,"die_other_cause_tb"]
-    mat2[,"die_other_cause_posttb"]<-(1.50**(ind-1))*mat2[,"die_other_cause_posttb"]
-    #increasing risk of background death by 50% every 5 years since we're starting at age 45
+    mat2[,"die_other_cause_posttb"]<-
+      (1.50**(ind-1))*mat2[,"die_other_cause_posttb"]
+    #increasing risk of background death by 50% every 5 years 
+    #since we're starting at age 45
     
-    mat2[,"die_other_cause_tb"]<-ifelse(mat2[,"die_other_cause_tb"]>1,1,mat2[,"die_other_cause_tb"])
-    mat2[,"die_other_cause_posttb"]<-ifelse(mat2[,"die_other_cause_posttb"]>1,1,mat2[,"die_other_cause_posttb"])
+    mat2[,"die_other_cause_tb"]<-ifelse(mat2[,"die_other_cause_tb"]>1,
+                                        1,mat2[,"die_other_cause_tb"])
+    mat2[,"die_other_cause_posttb"]<-ifelse(mat2[,"die_other_cause_posttb"]>1,
+                                            1,mat2[,"die_other_cause_posttb"])
     #capping transition probabilities at 1
     
     #now we need to adjust all of the other probabilities that depend 
@@ -118,6 +123,7 @@ TB_state_wide<-function(tb_death,oth_death,
     colnames(Subjects)<-colnames(mat)
     }  
   
+  #outputting resulting matrix
   Subjects
   
 }
